@@ -1,0 +1,23 @@
+Package: vaItemResponse
+Type: Package
+Title: Analyze Response Patterns in Verbal Autopsy Data 
+Version: 0.0.0.9999
+Description: vaItemResponse provides tools for analyzing the item response patterns in
+  verbal autopsy data.
+License: GPL-3
+Depends: R (>= 3.5.0)
+LazyData: TRUE
+RoxygenNote: 7.1.1
+Imports: stringi
+Packaged: 2020-09-23
+Authors@R: c(
+  person("Jason", "Thomas", email = "jarathomas@gmail.com", role = c("aut", "cre"))
+  )
+Encoding: UTF-8
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat,
+    openVA,
+    CrossVA
+VignetteBuilder: knitr
