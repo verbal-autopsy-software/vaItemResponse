@@ -33,7 +33,7 @@ mapICD("A90")
 
 For illustration purposes, we generate random causes-of-death for these deaths.
 
-```{r}
+```{r, warning=FALSE}
 random_COD <- data.frame(ID = RandomVA5$ID)
 set.seed(1)
 random_COD$cause = sample(c("Cause 1", "Cause 2", "Cause 3"), 
@@ -44,7 +44,7 @@ random_COD$cause = sample(c("Cause 1", "Cause 2", "Cause 3"),
 Now we are ready to calculate the symptom importance metric. The first step is to reorganize the data and account for fixed dependence relationship between symptoms due to the skip patterns of the questionnaire, using the `get_skip_pattern` function. We then use the output and the `evaluate_symptom` to calculate the importance metric for a particular symptom.
 
 
-```{r, warnings=FALSE}
+```{r, warning=FALSE}
 data <- get_skip_pattern(RandomVA5, COD = random_COD)
 metric <- evaluate_symptom(data = data, symptom = "i147o")
 metric
@@ -52,7 +52,7 @@ metric
 
 Notice this call of `evaluate_symptom` can take a long time to compute when the number of deaths and the number of causes are large. We can perform the calculation on a selected subset of causes as well. For example, 
 
-```{r}
+```{r, warning=FALSE}
 metric.sub <- evaluate_symptom(data = data, symptom = "i147o", 
 							   causes.compute = c("Cause 1", "Cause 3"))
 metric
