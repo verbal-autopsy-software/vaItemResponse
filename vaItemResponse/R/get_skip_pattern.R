@@ -9,14 +9,14 @@
 #' library(openVA)
 #' data(RandomVA5)
 #' random_COD <- data.frame(ID = RandomVA5$ID, cause = "Unknown")
-#' data <- get_skip_pattern(RandomVA5, COD = random_COD)
+#' data <- organize_dependence(RandomVA5, COD = random_COD)
 #' head(data$symptoms)
 #' head(data$causes)
 #' head(data$ID)
 #' summary(data$dependence)
 #' @export
 #' 
-get_skip_pattern <- function(data, COD, verbose=FALSE, remove.injury = TRUE){
+organize_dependence <- function(data, COD, verbose=FALSE, remove.injury = TRUE){
 	data("probbaseV5", envir = environment())
 	probbaseV5 <- get("probbaseV5", envir  = environment())
 	N <- dim(data)[1]

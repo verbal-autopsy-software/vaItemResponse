@@ -1,7 +1,7 @@
 #' Map ICD-10 codes into the WHO cause list
 #' 
 #' @param metric a data frame of item significance metric with at least the following three columns: cause, symptom, value. This can be the combined output from evaluate_symptom function.
-#' @param data output of the get_skip_pattern function. 
+#' @param data output of the organize_dependence function. 
 #' @examples
 #' \dontrun{
 #' require(openVA)
@@ -10,7 +10,7 @@
 #' set.seed(1)
 #' random_COD$cause = sample(c("Cause 1", "Cause 2"), 
 #' 							dim(random_COD)[1], replace=TRUE)
-#' data <- get_skip_pattern(RandomVA5, COD = random_COD)
+#' data <- organize_dependence(RandomVA5, COD = random_COD)
 #' metric_all <- NULL
 #' for(s in  data$symptoms[1:10, 1]){
 #'	 metric <- evaluate_symptom(data = data, symptom = s)

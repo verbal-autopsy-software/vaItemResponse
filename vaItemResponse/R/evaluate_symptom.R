@@ -12,7 +12,7 @@
 #' set.seed(1)
 #' random_COD$cause = sample(c("Cause 1", "Cause 2"), 
 #' 							dim(random_COD)[1], replace=TRUE)
-#' data <- get_skip_pattern(RandomVA5, COD = random_COD)
+#' data <- organize_dependence(RandomVA5, COD = random_COD)
 #' metric <- evaluate_symptom(data = data, symptom = "i147o")
 #' metric
 #' @export
@@ -25,7 +25,7 @@ evaluate_symptom <- function(data, symptom, causes.compute=NULL){
 	require(glmnet)
 	require(randomForest)
 
-	if(!is.list(data)) stop("data argument should be a list returned from get_skip_pattern() function.")
+	if(!is.list(data)) stop("data argument should be a list returned from organize_dependence() function.")
 
 		detY <- data$detY
 		detN <- data$detN

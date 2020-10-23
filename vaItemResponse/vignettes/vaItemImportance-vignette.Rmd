@@ -41,11 +41,11 @@ random_COD$cause = sample(c("Cause 1", "Cause 2", "Cause 3"),
 ```
 
 
-Now we are ready to calculate the symptom importance metric. The first step is to reorganize the data and account for fixed dependence relationship between symptoms due to the skip patterns of the questionnaire, using the `get_skip_pattern` function. We then use the output and the `evaluate_symptom` to calculate the importance metric for a particular symptom.
+Now we are ready to calculate the symptom importance metric. The first step is to reorganize the data and account for fixed dependence relationship between symptoms due to the skip patterns of the questionnaire, using the `organize_dependence` function. We then use the output and the `evaluate_symptom` to calculate the importance metric for a particular symptom.
 
 
 ```{r, warning=FALSE}
-data <- get_skip_pattern(RandomVA5, COD = random_COD)
+data <- organize_dependence(RandomVA5, COD = random_COD)
 metric <- evaluate_symptom(data = data, symptom = "i147o")
 metric
 ```
