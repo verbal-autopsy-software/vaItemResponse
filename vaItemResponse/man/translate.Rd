@@ -18,18 +18,9 @@ This is a worker function.
 \examples{
 \dontrun{
 ## Example with 2016 WHO VA instrument version 1.5.1
-record_f_name151 <- system.file("sample",
-                                "who151_odk_export.csv",
-                                package = "CrossVA")
-records151 <- read.csv(record_f_name151, stringsAsFactors = FALSE)
-
-form_f_name151 <- system.file("forms",
-                              "WHOVA2016_v1_5_1_XLS_form_for_ODK_survey.csv",
-                              package = "CrossVA")
-form151 <- read.csv2(form_f_name151, stringsAsFactors = FALSE)
-death <- records151[1,]
-
-relevant <- form151$relevant[15]
+library(vaItemResponse)
+data(who2016_151_instrument)
+relevant <- who2016_151_instrument$relevant[15]
 translate(relevant)
 }
 

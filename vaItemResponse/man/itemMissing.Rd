@@ -4,7 +4,12 @@
 \alias{itemMissing}
 \title{Calculate item missingness.}
 \usage{
-itemMissing(odk_data, odk_form, id_col = "meta.instanceID")
+itemMissing(
+  odk_data,
+  odk_form,
+  id_col = "meta.instanceID",
+  add_percent = FALSE
+)
 }
 \arguments{
 \item{odk_data}{A data frame with ODK data}
@@ -23,17 +28,11 @@ List with two data frames Deaths and Items.
 \dontrun{
 ## Example with 2016 WHO VA instrument version 1.5.1
 
-record_f_name151 <- system.file("sample",
-                                "who151_odk_export.csv",
-                                package = "CrossVA")
-records151 <- read.csv(record_f_name151, stringsAsFactors = FALSE)
-
-
-form_f_name151 <- system.file("forms",
-                              "WHOVA2016_v1_5_1_XLS_form_for_ODK_survey.csv",
-                              package = "CrossVA")
-form151 <- read.csv2(form_f_name151, stringsAsFactors = FALSE)
-results <- itemMissing(records151, form151)
+## Example with 2016 WHO VA instrument version 1.5.1
+library(vaItemResponse)
+data(who2016_151_data)
+data(who2016_151_instrument)
+results <- itemMissing(who2016_151_data, who2016_151_instrument)
 }
 
 }

@@ -10,18 +10,9 @@
 #' @examples
 #' \dontrun{
 #' ## Example with 2016 WHO VA instrument version 1.5.1
-#' record_f_name151 <- system.file("sample",
-#'                                 "who151_odk_export.csv",
-#'                                 package = "CrossVA")
-#' records151 <- read.csv(record_f_name151, stringsAsFactors = FALSE)
-#' 
-#' form_f_name151 <- system.file("forms",
-#'                               "WHOVA2016_v1_5_1_XLS_form_for_ODK_survey.csv",
-#'                               package = "CrossVA")
-#' form151 <- read.csv2(form_f_name151, stringsAsFactors = FALSE)
-#' death <- records151[1,]
-#' 
-#' relevant <- form151$relevant[15]
+#' library(vaItemResponse)
+#' data(who2016_151_instrument)
+#' relevant <- who2016_151_instrument$relevant[15]
 #' translate(relevant)
 #' }
 #'
@@ -100,11 +91,10 @@ translate <- function (relevant) {
 #' \dontrun{
 #' ## Example with 2016 WHO VA instrument version 1.5.1
 #' 
-#' form_f_name151 <- system.file("forms",
-#'                               "WHOVA2016_v1_5_1_XLS_form_for_ODK_survey.csv",
-#'                               package = "CrossVA")
-#' form151 <- read.csv2(form_f_name151, stringsAsFactors = FALSE)
-#' item_groups <- itemHierarchy(form151)$item_groups
+#' ## Example with 2016 WHO VA instrument version 1.5.1
+#' library(vaItemResponse)
+#' data(who2016_151_instrument)
+#' item_groups <- itemHierarchy(who2016_151_instrument)$item_groups
 #' }
 #'
 #' @importFrom stringi stri_replace_all_regex stri_count_words
@@ -163,6 +153,176 @@ itemHierarchy <- function (odk_form) {
 }
 
 
+##' Attempt to find root questions in the ODK Instrument.
+##'
+##' Makes several assumptions, probably makes a few mistakes.
+##' 
+##' @param odk_form A data frame with the ODK instrument
+##' @param ignore A vector of strings for item names to ignore when considering
+##' as determined by the relevant field.  Any items that include 'age' or 'is'
+##' are automatically ignored.  There is also an attempt to identify (and ignore)
+##' the item indicating the respondent's consent.
+##' @param drop_calculate Logical for including calculated items as potential root questions.
+##' @return A vector of strings with item names of the root questions.
+##'
+##' @export
+##' 
+findRoot <- function (odk_form, ignore = c("Id10019", "Id10310"), drop_calculate = FALSE) { 
+
+    form <- itemHierarchy(odk_form)
+    ignore_lower <- tolower(ignore)
+    drop_types <- c("begin group", "end group", "note", "start", "end", "comment")
+    if (drop_calculate) drop_types <- c(drop_types, "calculate")
+    # there are several values in relevant that include some variant of not Id10114 (born dead)
+    # can ignore these (no value should include stillbirth == yes, because the cause is sb)
+    id_stillbirth <- form[grep("born dead", form$"label..English"), "name"]
+
+    drop_relevant <- form$name[!(form$type %in% drop_types) &
+                               !grepl("consent", form$"label..English") &
+                               !grepl(id_stillbirth, form$relevant)]
+
+    drop_relevant <- drop_relevant[!grepl("age", tolower(drop_relevant))]
+    drop_relevant <- drop_relevant[!grepl("is", tolower(drop_relevant))]
+    drop_relevant <- drop_relevant[!grepl(paste(ignore_lower, sep="", collapse="|"), tolower(drop_relevant))]
+    drop_relevant <- tolower(drop_relevant)
+    drop_all <- paste(drop_relevant, sep="", collapse="|")
+
+    root1 <- subset(form, !(type %in% drop_types) &
+                          !grepl(drop_all,
+                                 tolower(form$relevant))
+                    )
+
+    # check group dependencies; can you use drop_relevant again?
+    drop_group <- subset(form, type == "begin group" &
+                               grepl(drop_all, tolower(form$relevant)) &
+                               !grepl(id_stillbirth, form$relevant))
+    drop_group_all <- paste(drop_group$name, sep="", collapse="|")
+    root2 <- subset(root1, !grepl(tolower(drop_group_all),
+                                  tolower(root1$item_groups))
+                    )
+    root_q <- root2$name
+    return (root_q)
+}
+
+
+##' Identify which demographic groups are eligible for each item.
+##'
+##' It may be of interest to stratify item response results by
+##' demographic groups.  This function, used by \code{itemMissing},
+##' makes this task easier.  The demographic groups include
+##' adults, children, neonates, and mothers.
+##'
+##' @param odk_form A data frame with the ODK instrument
+##' 
+##' @return A list of vectors with ODK items as rows and columns that
+##' indicate if the item can appear in the interview for the
+##' corresponding demographic group.
+##' 
+##' @importFrom stringi stri_match_all_regex
+##' @export
+##' 
+demGroups <- function (odk_form) {
+    
+    form <- itemHierarchy(odk_form)
+    q_adult <- NULL
+    q_child <- NULL
+    q_neonatal <- NULL
+    q_problem <- NULL
+    row_skip <- c("begin group", "end group", "note", "start", "end", "comment")
+
+    for (i in 1:nrow(form)) { # i = 328
+
+        if (form$type[i] %in% row_skip) next
+        depends <- strsplit(form$item_group[i], "\\.")
+        depends <- unlist(depends)
+        index_depends <- which(form$name %in% depends)
+        depends_relevant <- form$relevant[index_depends]
+
+        ## Adults
+        is_adult1 <- "(?<!not\\()selected\\(\\$\\{isAdult\\},[:blank:]*'1'"
+        is_adult2 <- "\\$\\{isAdult\\}[:blank:]*=[:blank:]*'1'"
+        check_match1 <- unlist(stri_match_all_regex(depends_relevant, is_adult1, omit_no_match = TRUE))
+        check_match2 <- unlist(stri_match_all_regex(depends_relevant, is_adult2, omit_no_match = TRUE))
+        found_match <- length(check_match1) > 0 | length(check_match2)
+
+        not_is_adult1 <- "not\\(selected\\(\\$\\{(isAdult]+)\\},+('[^']+')\\)\\)"
+        not_is_adult2 <- "\\$\\{isAdult\\}[:blank:]*\\!=[:blank:]*'1'"
+        check_no_match1 <- unlist(stri_match_all_regex(depends_relevant, not_is_adult1, omit_no_match = TRUE))
+        check_no_match2 <- unlist(stri_match_all_regex(depends_relevant, not_is_adult2, omit_no_match = TRUE))
+        found_no_match <- length(check_no_match1) > 0 | length(check_no_match2)
+        if (found_match & found_no_match) {
+            q_problem <- c(q_problem, form$name[i])
+        }
+        if (found_match & ! found_no_match) {
+            q_adult <- c(q_adult, form$name[i])
+        }
+        
+        ## Children
+        is_child1 <- "(?<!not\\()selected\\(\\$\\{isChild\\},[:blank:]*'1'"
+        is_child2 <- "\\$\\{isChild\\}[:blank:]*=[:blank:]*'1'"
+        check_match1 <- unlist(stri_match_all_regex(depends_relevant, is_child1, omit_no_match = TRUE))
+        check_match2 <- unlist(stri_match_all_regex(depends_relevant, is_child2, omit_no_match = TRUE))
+        found_match <- length(check_match1) > 0 | length(check_match2)
+
+        not_is_child1 <- "not\\(selected\\(\\$\\{(isChild]+)\\},+('[^']+')\\)\\)"
+        not_is_child2 <- "\\$\\{isChild\\}[:blank:]*\\!=[:blank:]*'1'"
+        check_no_match1 <- unlist(stri_match_all_regex(depends_relevant, not_is_child1, omit_no_match = TRUE))
+        check_no_match2 <- unlist(stri_match_all_regex(depends_relevant, not_is_child2, omit_no_match = TRUE))
+        found_no_match <- length(check_no_match1) > 0 | length(check_no_match2)
+        if (found_match & found_no_match) {
+            q_problem <- c(q_problem, form$name[i])
+        }
+        if (found_match & ! found_no_match) {
+            q_child <- c(q_child, form$name[i])
+        }
+        
+        ## Neonates
+        is_neonatal1 <- "(?<!not\\()selected\\(\\$\\{isNeonatal\\},[:blank:]*'1'"
+        is_neonatal2 <- "\\$\\{isNeonatal\\}[:blank:]*=[:blank:]*'1'"
+        check_match1 <- unlist(stri_match_all_regex(depends_relevant, is_neonatal1, omit_no_match = TRUE))
+        check_match2 <- unlist(stri_match_all_regex(depends_relevant, is_neonatal2, omit_no_match = TRUE))
+        found_match <- length(check_match1) > 0 | length(check_match2)
+
+        not_is_neonatal1 <- "not\\(selected\\(\\$\\{(isNeonatal]+)\\},+('[^']+')\\)\\)"
+        not_is_neonatal2 <- "\\$\\{isNeonatal\\}[:blank:]*\\!=[:blank:]*'1'"
+        check_no_match1 <- unlist(stri_match_all_regex(depends_relevant, not_is_neonatal1, omit_no_match = TRUE))
+        check_no_match2 <- unlist(stri_match_all_regex(depends_relevant, not_is_neonatal2, omit_no_match = TRUE))
+        found_no_match <- length(check_no_match1) > 0 | length(check_no_match2)
+        if (found_match & found_no_match) {
+            q_problem <- c(q_problem, form$name[i])
+        }
+        if (found_match & ! found_no_match) {
+            q_neonatal <- c(q_neonatal, form$name[i])
+        }
+    }
+    items_maternal <- form[grep("pregnancy", form$item_groups),]
+    q_maternal <- items_maternal$name[items_maternal$type != "begin group"]
+
+    index_all <- !(form$name %in% q_adult) &
+        !(form$name %in% q_child) &
+        !(form$name %in% q_neonatal) &
+        !(form$type %in% row_skip)
+
+    q_all <- form$name[index_all]
+
+    q_adult <- c(q_adult, q_all)
+    q_child <- c(q_child, q_all)
+    q_neonatal <- c(q_neonatal, q_all)
+
+    # re-order to match odk form
+    q_adult <- q_adult[order(match(q_adult, form$name))]
+    q_child <- q_child[order(match(q_child, form$name))]
+    q_neonatal <- q_neonatal[order(match(q_neonatal, form$name))]
+
+    q_list <-list(adults = q_adult,
+                  children = q_child,
+                  neonates = q_neonatal,
+                  maternal = q_maternal)
+
+    return (q_list)
+}
+
+
 #' Calculate item missingness.
 #'
 #' \code{itemMissing} 
@@ -178,36 +338,17 @@ itemHierarchy <- function (odk_form) {
 #' \dontrun{
 #' ## Example with 2016 WHO VA instrument version 1.5.1
 #' 
-#' record_f_name151 <- system.file("sample",
-#'                                 "who151_odk_export.csv",
-#'                                 package = "CrossVA")
-#' records151 <- read.csv(record_f_name151, stringsAsFactors = FALSE)
-#'
-#' 
-#' form_f_name151 <- system.file("forms",
-#'                               "WHOVA2016_v1_5_1_XLS_form_for_ODK_survey.csv",
-#'                               package = "CrossVA")
-#' form151 <- read.csv2(form_f_name151, stringsAsFactors = FALSE)
-#' results <- itemMissing(records151, form151)
+#' ## Example with 2016 WHO VA instrument version 1.5.1
+#' library(vaItemResponse)
+#' data(who2016_151_data)
+#' data(who2016_151_instrument)
+#' results <- itemMissing(who2016_151_data, who2016_151_instrument)
 #' }
 #'
 #' @importFrom stringi stri_endswith_fixed
 #' @export
 #'
-itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
-
-    ## record_f_name151 <- system.file("sample",
-    ##                                 "who151_odk_export.csv",
-    ##                                 package = "CrossVA")
-    ## records151 <- read.csv(record_f_name151, stringsAsFactors = FALSE)
-
-    ## form_f_name151 <- system.file("forms",
-    ##                               "WHOVA2016_v1_5_1_XLS_form_for_ODK_survey.csv",
-    ##                               package = "CrossVA")
-    ## form151 <- read.csv2(form_f_name151, stringsAsFactors = FALSE)
-    ## odk_data <- records151
-    ## odk_form <- form151
-    ## id_col = "meta.instanceID"
+itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", add_percent = FALSE) {
 
     ## set up input data
     split_names <- strsplit(names(odk_data), "\\.")
@@ -335,8 +476,48 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
             ITEMS[index_form, "entropy"] <- -1*sum(ptab*log(ptab))
 #        }
     }
+    ITEMS$"label..English" <- iconv(ITEMS$"label..English", "UTF-8", "ASCII", sub=" ")
+    ITEMS$"label..English" <- stri_replace_all_regex(ITEMS$"label..English", "\n", "")
+    ITEMS$"label..English" <- stri_replace_all_regex(ITEMS$"label..English", "\"", "'")
 
-    ## devtools::test_file("../tests/testthat/test-item-response.R")
+    if (add_percent) {
+
+#        DEATHS$pct_total <- DEATHS$n_items/max(DEATHS$n_total, na.rm = TRUE)
+        DEATHS$pct_ref <- 100*DEATHS$n_ref/DEATHS$n_items
+        DEATHS$pct_dk <- 100*DEATHS$n_dk/DEATHS$n_items
+        DEATHS$pct_mis <- 100*DEATHS$n_mis/DEATHS$n_items
+        DEATHS$pct_yes <- 100*DEATHS$n_yes/DEATHS$n_items
+        DEATHS$pct_no <- 100*DEATHS$n_no/DEATHS$n_items
+
+        ITEMS$pct_total <- 100*ITEMS$n_asked/max(ITEMS$n_asked, na.rm = TRUE)
+        ITEMS$pct_ref <- 100*ITEMS$n_ref/ITEMS$n_asked
+        ITEMS$pct_dk <- 100*ITEMS$n_dk/ITEMS$n_asked
+        ITEMS$pct_miss <- 100*ITEMS$n_miss/ITEMS$n_asked
+        ITEMS$pct_yes <- 100*ITEMS$n_yes/ITEMS$n_asked
+        ITEMS$pct_no <- 100*ITEMS$n_no/ITEMS$n_asked
+    }
+
+    q_root <- findRoot(odk_form)
+    q_dem_groups <- demGroups(odk_form)
+    ITEMS$root_item <- ITEMS$name %in% q_root
+    ITEMS$adult_item <- ITEMS$name %in% q_dem_groups$adults
+    ITEMS$child_item <- ITEMS$name %in% q_dem_groups$children
+    ITEMS$neonatal_item <- ITEMS$name %in% q_dem_groups$neonates
+    ITEMS$maternal_item <- ITEMS$name %in% q_dem_groups$maternal
+
+    yes_no_types <- grep("yes",
+                         tolower(names(table(odk_form$type))),
+                         value = TRUE)
+    q_yes_no <- odk_form$name[tolower(odk_form$type) %in% yes_no_types]
+    ITEMS$n_yes[!(ITEMS$name %in% q_yes_no)] <- NA
+    ITEMS$n_no[!(ITEMS$name %in% q_yes_no)] <- NA
+
+    if (add_percent) {
+        ITEMS$pct_yes[!(ITEMS$name %in% q_yes_no)] <- NA
+        ITEMS$pct_no[!(ITEMS$name %in% q_yes_no)] <- NA
+    }
+
+   ## devtools::test_file("../tests/testthat/test-item-response.R")
     # That's all folks!
     results <- list(Deaths = DEATHS,
                     Items = ITEMS)
