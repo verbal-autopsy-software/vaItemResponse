@@ -2,7 +2,7 @@
 % Please edit documentation in R/odkItemResponsePlots.R
 \name{plotItems}
 \alias{plotItems}
-\title{Histograms for the}
+\title{Histograms for the item response patterns.}
 \usage{
 plotItems(items, response)
 }
@@ -12,10 +12,8 @@ plotItems(items, response)
 \item{response}{Name of the column in the data frame to plot.}
 }
 \description{
-\code{plotItems}
-}
-\details{
-This is a worker function.
+\code{plotItems} is intended to be used with the Items data frame produced
+by \code{itemMissing}.
 }
 \examples{
 \dontrun{

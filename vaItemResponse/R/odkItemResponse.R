@@ -218,7 +218,7 @@ findRoot <- function (odk_form, ignore = c("Id10019", "Id10310"), drop_calculate
 ##' indicate if the item can appear in the interview for the
 ##' corresponding demographic group.
 ##' 
-##' @importFrom stringi stri_replace_all_regex stri_count_words
+##' @importFrom stringi stri_match_all_regex
 ##' @export
 ##' 
 demGroups <- function (odk_form) {
@@ -483,18 +483,18 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", add_perc
     if (add_percent) {
 
 #        DEATHS$pct_total <- DEATHS$n_items/max(DEATHS$n_total, na.rm = TRUE)
-        DEATHS$pct_ref <- DEATHS$n_ref/DEATHS$n_items
-        DEATHS$pct_dk <- DEATHS$n_dk/DEATHS$n_items
-        DEATHS$pct_mis <- DEATHS$n_mis/DEATHS$n_items
-        DEATHS$pct_yes <- DEATHS$n_yes/DEATHS$n_items
-        DEATHS$pct_no <- DEATHS$n_no/DEATHS$n_items
+        DEATHS$pct_ref <- 100*DEATHS$n_ref/DEATHS$n_items
+        DEATHS$pct_dk <- 100*DEATHS$n_dk/DEATHS$n_items
+        DEATHS$pct_mis <- 100*DEATHS$n_mis/DEATHS$n_items
+        DEATHS$pct_yes <- 100*DEATHS$n_yes/DEATHS$n_items
+        DEATHS$pct_no <- 100*DEATHS$n_no/DEATHS$n_items
 
-        ITEMS$pct_total <- ITEMS$n_asked/max(ITEMS$n_asked, na.rm = TRUE)
-        ITEMS$pct_ref <- ITEMS$n_ref/ITEMS$n_asked
-        ITEMS$pct_dk <- ITEMS$n_dk/ITEMS$n_asked
-        ITEMS$pct_miss <- ITEMS$n_miss/ITEMS$n_asked
-        ITEMS$pct_yes <- ITEMS$n_yes/ITEMS$n_asked
-        ITEMS$pct_no <- ITEMS$n_no/ITEMS$n_asked
+        ITEMS$pct_total <- 100*ITEMS$n_asked/max(ITEMS$n_asked, na.rm = TRUE)
+        ITEMS$pct_ref <- 100*ITEMS$n_ref/ITEMS$n_asked
+        ITEMS$pct_dk <- 100*ITEMS$n_dk/ITEMS$n_asked
+        ITEMS$pct_miss <- 100*ITEMS$n_miss/ITEMS$n_asked
+        ITEMS$pct_yes <- 100*ITEMS$n_yes/ITEMS$n_asked
+        ITEMS$pct_no <- 100*ITEMS$n_no/ITEMS$n_asked
     }
 
     q_root <- findRoot(odk_form)
