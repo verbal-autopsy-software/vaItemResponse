@@ -6,7 +6,7 @@
 #' @param remove.injury whether to remove injury related symptoms
 #' @return a list of binary data, symptom table, and dependence structure.
 #' @examples
-#' require(openVA)
+#' require(InterVA5)
 #' data(RandomVA5)
 #' random_COD <- data.frame(ID = RandomVA5$ID)
 #' set.seed(1)

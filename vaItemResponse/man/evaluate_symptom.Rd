@@ -22,13 +22,13 @@ a list of binary data, symptom table, and dependence structure.
 Create skip pattern list to account for fixed symptom dependence
 }
 \examples{
-require(openVA)
+require(InterVA5)
 data(RandomVA5)
 random_COD <- data.frame(ID = RandomVA5$ID)
 set.seed(1)
 random_COD$cause = sample(c("Cause 1", "Cause 2"), 
 							dim(random_COD)[1], replace=TRUE)
-data <- get_skip_pattern(RandomVA5, COD = random_COD)
+data <- organize_dependence(RandomVA5, COD = random_COD)
 metric <- evaluate_symptom(data = data, symptom = "i147o")
 metric
 }

@@ -16,7 +16,7 @@ a data frame of symptoms after checking for inconsistencies using the InterVA-5 
 Clean and check data collected using WHO 2016 questionnaire
 }
 \examples{
-require(openVA)
+require(InterVA5)
 data(RandomVA5)
 cleaned <- check_data(RandomVA5)
 cleaned[1:10, 1:10]

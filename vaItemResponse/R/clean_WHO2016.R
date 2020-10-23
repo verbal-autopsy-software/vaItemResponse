@@ -3,15 +3,15 @@
 #' @param vadata data frame of the WHO2016 data in the InterVA-5 input format.
 #' @return a data frame of symptoms after checking for inconsistencies using the InterVA-5 logic.  
 #' @examples
-#' require(openVA)
+#' require(InterVA5)
 #' data(RandomVA5)
 #' cleaned <- check_data(RandomVA5)
 #' cleaned[1:10, 1:10]
-#' @import openVA
+#' @import InterVA5
 #' @export
 #' 
 check_data <- function(vadata){
-	require(openVA)
+	require(InterVA5)
 	# InterVA check scheme
 	data.num <- matrix(0, dim(vadata)[1], dim(vadata)[2] - 1)
 	for(j in 2:dim(vadata)[2]){

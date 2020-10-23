@@ -4,7 +4,8 @@
 \alias{findRoot}
 \title{Attempt to find root questions in the ODK Instrument.}
 \usage{
-findRoot(odk_form, ignore = c("Id10019", "Id10310"), drop_calculate = FALSE)
+findRoot(odk_form, ignore = c("Id10019", "Id10310"),
+  drop_calculate = FALSE)
 }
 \arguments{
 \item{odk_form}{A data frame with the ODK instrument}

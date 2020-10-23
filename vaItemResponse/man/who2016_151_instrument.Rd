@@ -4,9 +4,7 @@
 \name{who2016_151_instrument}
 \alias{who2016_151_instrument}
 \title{The WHO 2016 verbal autopsy instrument (version 1.51).}
-\format{
-An object of class \code{data.frame} with 588 rows and 13 columns.
-}
+\format{An object of class \code{data.frame} with 588 rows and 13 columns.}
 \usage{
 data(who2016_151_instrument)
 }

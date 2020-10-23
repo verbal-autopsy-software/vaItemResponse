@@ -4,7 +4,7 @@
 #' @param data output of the organize_dependence function. 
 #' @examples
 #' \dontrun{
-#' require(openVA)
+#' require(InterVA5)
 #' data(RandomVA5)
 #' random_COD <- data.frame(ID = RandomVA5$ID)
 #' set.seed(1)

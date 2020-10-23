@@ -6,7 +6,7 @@
 #' @param remove.injury whether to remove injury related symptoms
 #' @return a list of binary data, symptom table, and dependence structure.
 #' @examples
-#' library(openVA)
+#' library(InterVA5)
 #' data(RandomVA5)
 #' random_COD <- data.frame(ID = RandomVA5$ID, cause = "Unknown")
 #' data <- organize_dependence(RandomVA5, COD = random_COD)

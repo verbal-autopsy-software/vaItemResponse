@@ -18,11 +18,11 @@ library(vaItemResponse)
 
 This vignette provides a minimal example of using simulated data to calculate item importance in VA questionnaires.
 
-We first load a simulated dataset from the openVA package
+We first load a simulated dataset from the InterVA5 package
 
 ```{r}
 library(vaItemResponse)
-library(openVA)
+library(InterVA5)
 data(RandomVA5)
 ```
 
