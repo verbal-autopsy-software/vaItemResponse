@@ -12,7 +12,7 @@
 #' library(vaItemResponse)
 #' data(who2016_151_data)
 #' data(who2016_151_instrument)
-#' results <- itemMissing(who2016_151_data, who2016_151_instrument, add_percent = TRUE)
+#' results <- itemMissing(who2016_151_data, who2016_151_instrument)
 #' 
 #' }
 #'
@@ -45,5 +45,63 @@ plotItems <- function (items, response) {
                            labels = c("median", "75th percentile", "99th percentile"))
 
     suppressWarnings(print(g))
+
+}
+
+
+#' Heatmap for selected response items.
+#'
+#' \code{heatMap} is intended to be used with the Items data frame produced
+#' by \code{itemMissing}.
+#'
+#' @param items A data frame returned from \code{itemMissing}.
+#' @param first Index for the first item to include in the plot.
+#' @param last Index for the last item to include in the plot.
+#' @param label_length Number of characters in label per line.
+#'
+#' @examples
+#' \dontrun{
+#' ## Example with 2016 WHO VA instrument version 1.5.1
+#' library(vaItemResponse)
+#' data(who2016_151_data)
+#' data(who2016_151_instrument)
+#' results <- itemMissing(who2016_151_data, who2016_151_instrument)
+#' }
+#'
+#' @import ggplot2 dplyr
+#' @importFrom reshape2 melt
+#' @importFrom stringr str_wrap
+#' @export
+#'
+heatMap <- function (items, first = 1, last = 30, label_length = 150) {
+
+    items$label[items$label == ""] <- items$name[items$label == ""]
+    item_map <- items %>%
+        slice(first:last) %>%
+        select("label", pct_total, pct_ref, pct_dk, pct_miss, pct_yes, pct_no) %>%
+        melt(id.vars = "label")
+
+    item_map$variable <- recode_factor(item_map$variable,
+                                       pct_total = "% asked", 
+                                       pct_ref = "% refuse",
+                                       pct_dk = "% don't know", 
+                                       pct_miss = "% missing", 
+                                       pct_yes = "% yes", 
+                                       pct_no = "% no")
+
+    g <-  item_map %>%
+        ggplot(aes(variable, reorder(label, desc(label)), fill = value)) + 
+        geom_tile() + 
+        scale_fill_gradient2(low="blue", high="#d7191c") + 
+        theme_bw() + 
+        theme(axis.text.x = element_text(angle = 45, hjust = 0),
+              axis.text.y = element_text(size = 10),
+              panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill="gray50")) + 
+        labs(x = "", y = "") +
+        scale_x_discrete(position = "top") +
+        scale_y_discrete(labels = function (x) str_wrap(x, width = label_length))
+
+    print(g)
 
 }

@@ -4,7 +4,9 @@
 \name{who2016_151_data}
 \alias{who2016_151_data}
 \title{Example data generated from the WHO 2016 verbal autopsy instrument (version 1.5.1).}
-\format{An object of class \code{data.frame} with 139 rows and 527 columns.}
+\format{
+An object of class \code{data.frame} with 139 rows and 527 columns.
+}
 \usage{
 data(who2016_151_data)
 }

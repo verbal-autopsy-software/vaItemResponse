@@ -4,8 +4,7 @@
 \alias{itemMissing}
 \title{Calculate item missingness.}
 \usage{
-itemMissing(odk_data, odk_form, id_col = "meta.instanceID",
-  add_percent = FALSE)
+itemMissing(odk_data, odk_form, id_col = "meta.instanceID")
 }
 \arguments{
 \item{odk_data}{A data frame with ODK data}

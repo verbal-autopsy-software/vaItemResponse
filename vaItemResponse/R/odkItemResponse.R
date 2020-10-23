@@ -348,7 +348,7 @@ demGroups <- function (odk_form) {
 #' @importFrom stringi stri_endswith_fixed
 #' @export
 #'
-itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", add_percent = FALSE) {
+itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
 
     ## set up input data
     split_names <- strsplit(names(odk_data), "\\.")
@@ -357,6 +357,8 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", add_perc
     ## names(odk_data) <- death_fnames
     new_odk_form <- itemHierarchy(odk_form)
     clean_form <- new_odk_form[new_odk_form$name != "",]
+    clean_form$label <- clean_form$"label..English"
+    clean_form <- clean_form[, !(names(new_odk_form) %in% "label..English")]
 
     ## set up output data
     n_deaths <- nrow(odk_data)
@@ -383,7 +385,7 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", add_perc
                              )
     }
 
-    ITEMS <- clean_form[, c('type', 'name', 'label..English', 'relevant', 'required')]
+    ITEMS <- clean_form[, c('type', 'name', 'label', 'relevant', 'required')]
     ITEMS$n_asked <- rep(0, nrow(clean_form))
     ITEMS$n_ref <- rep(0, nrow(clean_form))
     ITEMS$n_dk <- rep(0, nrow(clean_form))
@@ -476,26 +478,23 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", add_perc
             ITEMS[index_form, "entropy"] <- -1*sum(ptab*log(ptab))
 #        }
     }
-    ITEMS$"label..English" <- iconv(ITEMS$"label..English", "UTF-8", "ASCII", sub=" ")
-    ITEMS$"label..English" <- stri_replace_all_regex(ITEMS$"label..English", "\n", "")
-    ITEMS$"label..English" <- stri_replace_all_regex(ITEMS$"label..English", "\"", "'")
-
-    if (add_percent) {
+    ITEMS$"label" <- iconv(ITEMS$"label", "UTF-8", "ASCII", sub=" ")
+    ITEMS$"label" <- stri_replace_all_regex(ITEMS$"label", "\n", "")
+    ITEMS$"label" <- stri_replace_all_regex(ITEMS$"label", "\"", "'")
 
 #        DEATHS$pct_total <- DEATHS$n_items/max(DEATHS$n_total, na.rm = TRUE)
-        DEATHS$pct_ref <- 100*DEATHS$n_ref/DEATHS$n_items
-        DEATHS$pct_dk <- 100*DEATHS$n_dk/DEATHS$n_items
-        DEATHS$pct_mis <- 100*DEATHS$n_mis/DEATHS$n_items
-        DEATHS$pct_yes <- 100*DEATHS$n_yes/DEATHS$n_items
-        DEATHS$pct_no <- 100*DEATHS$n_no/DEATHS$n_items
+    DEATHS$pct_ref <- 100*DEATHS$n_ref/DEATHS$n_items
+    DEATHS$pct_dk <- 100*DEATHS$n_dk/DEATHS$n_items
+    DEATHS$pct_mis <- 100*DEATHS$n_mis/DEATHS$n_items
+    DEATHS$pct_yes <- 100*DEATHS$n_yes/DEATHS$n_items
+    DEATHS$pct_no <- 100*DEATHS$n_no/DEATHS$n_items
 
-        ITEMS$pct_total <- 100*ITEMS$n_asked/max(ITEMS$n_asked, na.rm = TRUE)
-        ITEMS$pct_ref <- 100*ITEMS$n_ref/ITEMS$n_asked
-        ITEMS$pct_dk <- 100*ITEMS$n_dk/ITEMS$n_asked
-        ITEMS$pct_miss <- 100*ITEMS$n_miss/ITEMS$n_asked
-        ITEMS$pct_yes <- 100*ITEMS$n_yes/ITEMS$n_asked
-        ITEMS$pct_no <- 100*ITEMS$n_no/ITEMS$n_asked
-    }
+    ITEMS$pct_total <- 100*ITEMS$n_asked/max(ITEMS$n_asked, na.rm = TRUE)
+    ITEMS$pct_ref <- 100*ITEMS$n_ref/ITEMS$n_asked
+    ITEMS$pct_dk <- 100*ITEMS$n_dk/ITEMS$n_asked
+    ITEMS$pct_miss <- 100*ITEMS$n_miss/ITEMS$n_asked
+    ITEMS$pct_yes <- 100*ITEMS$n_yes/ITEMS$n_asked
+    ITEMS$pct_no <- 100*ITEMS$n_no/ITEMS$n_asked
 
     q_root <- findRoot(odk_form)
     q_dem_groups <- demGroups(odk_form)
@@ -512,10 +511,8 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", add_perc
     ITEMS$n_yes[!(ITEMS$name %in% q_yes_no)] <- NA
     ITEMS$n_no[!(ITEMS$name %in% q_yes_no)] <- NA
 
-    if (add_percent) {
-        ITEMS$pct_yes[!(ITEMS$name %in% q_yes_no)] <- NA
-        ITEMS$pct_no[!(ITEMS$name %in% q_yes_no)] <- NA
-    }
+    ITEMS$pct_yes[!(ITEMS$name %in% q_yes_no)] <- NA
+    ITEMS$pct_no[!(ITEMS$name %in% q_yes_no)] <- NA
 
    ## devtools::test_file("../tests/testthat/test-item-response.R")
     # That's all folks!
