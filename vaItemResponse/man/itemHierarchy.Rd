@@ -22,11 +22,10 @@ are separated by ".".
 \dontrun{
 ## Example with 2016 WHO VA instrument version 1.5.1
 
-form_f_name151 <- system.file("forms",
-                              "WHOVA2016_v1_5_1_XLS_form_for_ODK_survey.csv",
-                              package = "CrossVA")
-form151 <- read.csv2(form_f_name151, stringsAsFactors = FALSE)
-item_groups <- itemHierarchy(form151)$item_groups
+## Example with 2016 WHO VA instrument version 1.5.1
+library(vaItemResponse)
+data(who2016_151_instrument)
+item_groups <- itemHierarchy(who2016_151_instrument)$item_groups
 }
 
 }

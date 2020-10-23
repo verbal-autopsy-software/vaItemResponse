@@ -4,7 +4,9 @@
 \name{CODgroup}
 \alias{CODgroup}
 \title{Mapping between the WHO cause list and broad categories}
-\format{An object of class \code{data.frame} with 61 rows and 2 columns.}
+\format{
+An object of class \code{data.frame} with 61 rows and 2 columns.
+}
 \usage{
 data(CODgroup)
 }
