@@ -5,7 +5,7 @@ Version: 0.0.0.9999
 Description: vaItemResponse provides tools for analyzing the item response patterns in
   verbal autopsy data.
 License: GPL-3
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.5.0), tmle, glmnet, randomForest
 LazyData: TRUE
 RoxygenNote: 7.1.1
 Imports: stringi, InterVA5 (>= 1.0.1), dplyr, ggplot2, glmnet, randomForest, tmle, reshape2, stringr
