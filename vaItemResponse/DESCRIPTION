@@ -8,7 +8,7 @@ License: GPL-3
 Depends: R (>= 3.5.0)
 LazyData: TRUE
 RoxygenNote: 7.1.1
-Imports: stringi, InterVA5 (>= 1.0.1)
+Imports: stringi, InterVA5 (>= 1.0.1), dplyr, ggplot2, glmnet, randomForest, tmle, reshape2, stringr
 Packaged: 2020-09-23
 Authors@R: c(
   person("Jason", "Thomas", email = "jarathomas@gmail.com", role = c("aut", "cre"))
