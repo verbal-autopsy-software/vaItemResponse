@@ -158,50 +158,69 @@ itemHierarchy <- function (odk_form) {
 ##' Makes several assumptions, probably makes a few mistakes.
 ##' 
 ##' @param odk_form A data frame with the ODK instrument
-##' @param ignore A vector of strings for item names to ignore when considering
-##' as determined by the relevant field.  Any items that include 'age' or 'is'
-##' are automatically ignored.  There is also an attempt to identify (and ignore)
-##' the item indicating the respondent's consent.
-##' @param drop_calculate Logical for including calculated items as potential root questions.
-##' @return A vector of strings with item names of the root questions.
+##' @param ignoreAge A logical to indicate if age-related items should be ignored
+##' (as parents) as determined by the relevant field.
+##' @param ignoreSex A logical to indicate if sex should be ignored
+##' (as parents) as determined by the relevant field.
+##' @param ignoreStillBirth A logical to indicate if the still birth item should
+##' be ignored (as parents) as determined by the relevant field.
+##' @param ignorePregnant A logical to indicate if the pregnancy item should
+##' be ignored (as parents) as determined by the relevant field.
+##' @return A list of item names and labels (both strings) of the root questions.
 ##'
 ##' @export
-##' 
-findRoot <- function (odk_form, ignore = c("Id10019", "Id10310"), drop_calculate = FALSE) { 
+##'
+findRoot <- function(odk_form, ignoreAge=TRUE, ignoreSex=TRUE, ignoreStillBirth=TRUE, ignorePregnant=TRUE) {
+  
+  roots_name <- NULL
+  roots_label <- NULL
+  new_odk_form <- itemHierarchy(odk_form)
+  clean_form <- new_odk_form[new_odk_form$name != "",]
+  clean_form$label <- clean_form$"label..English"
+  clean_form <- clean_form[, !(names(new_odk_form) %in% "label..English")]
+  
+  for (i in 1:nrow(clean_form)) {
+    
+    skip_types <- c("begin group", "end group", "calculate", "note")
+    if (clean_form$type[i] %in% skip_types) next
 
-    form <- itemHierarchy(odk_form)
-    ignore_lower <- tolower(ignore)
-    drop_types <- c("begin group", "end group", "note", "start", "end", "comment")
-    if (drop_calculate) drop_types <- c(drop_types, "calculate")
-    # there are several values in relevant that include some variant of not Id10114 (born dead)
-    # can ignore these (no value should include stillbirth == yes, because the cause is sb)
-    id_stillbirth <- form[grep("born dead", form$"label..English"), "name"]
+    depends <- strsplit(clean_form$item_group[i], "\\.")
+    depends <- unlist(depends)
+    index_depends <- which(clean_form$name %in% depends)
+    depends_relevant <- clean_form$relevant[index_depends]
+    if (all(depends_relevant == "")) {
+      # then I think clean_form$name[i] is a root item
+      names_relevant <- NULL
+    } else {
+      translated_relevant <- vapply(depends_relevant,
+                                    translate,
+                                    FUN.VALUE = character(1),
+                                    USE.NAMES = FALSE)
+      translated_relevant <- translated_relevant[!(translated_relevant == "")]
+      list_names_relevant <- lapply(clean_form$name, function (x) grepl(x, translated_relevant, fixed = TRUE))
+      index_names_relevant <- lapply(list_names_relevant, function (x) any(x))
+      names_relevant <- clean_form$name[unlist(index_names_relevant)]
+    }
+    # remove consent Id10013 and ignores; if length > 0, then not a root
+    final_names_relevant <- names_relevant[names_relevant != "Id10013"]
+    if (ignoreAge) {
+      final_names_relevant <- final_names_relevant[!grepl("age", tolower(final_names_relevant), fixed = TRUE)]
+      final_names_relevant <- final_names_relevant[!grepl("isneo", tolower(final_names_relevant), fixed = TRUE)]
+      final_names_relevant <- final_names_relevant[!grepl("isadult", tolower(final_names_relevant), fixed = TRUE)]
+      final_names_relevant <- final_names_relevant[!grepl("ischild", tolower(final_names_relevant), fixed = TRUE)]
+    }
+    if (ignoreSex) final_names_relevant <- final_names_relevant[final_names_relevant != "Id10019"]
+    if (ignoreStillBirth) final_names_relevant <- final_names_relevant[final_names_relevant != "Id10114"]
+    if (ignorePregnant) final_names_relevant <- final_names_relevant[final_names_relevant != "Id10310"]
+    
+    if (length(final_names_relevant) == 0) {
+      roots_name <- c(roots_name, clean_form$name[i])
+      roots_label <- c(roots_label, clean_form$label[i])
+    }
+  }
+  roots <- list(name = roots_name, label = roots_label)
 
-    drop_relevant <- form$name[!(form$type %in% drop_types) &
-                               !grepl("consent", form$"label..English") &
-                               !grepl(id_stillbirth, form$relevant)]
-
-    drop_relevant <- drop_relevant[!grepl("age", tolower(drop_relevant))]
-    drop_relevant <- drop_relevant[!grepl("is", tolower(drop_relevant))]
-    drop_relevant <- drop_relevant[!grepl(paste(ignore_lower, sep="", collapse="|"), tolower(drop_relevant))]
-    drop_relevant <- tolower(drop_relevant)
-    drop_all <- paste(drop_relevant, sep="", collapse="|")
-
-    root1 <- subset(form, !(type %in% drop_types) &
-                          !grepl(drop_all,
-                                 tolower(form$relevant))
-                    )
-
-    # check group dependencies; can you use drop_relevant again?
-    drop_group <- subset(form, type == "begin group" &
-                               grepl(drop_all, tolower(form$relevant)) &
-                               !grepl(id_stillbirth, form$relevant))
-    drop_group_all <- paste(drop_group$name, sep="", collapse="|")
-    root2 <- subset(root1, !grepl(tolower(drop_group_all),
-                                  tolower(root1$item_groups))
-                    )
-    root_q <- root2$name
-    return (root_q)
+  return (roots)
 }
 
 
@@ -496,7 +515,7 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
     ITEMS$pct_yes <- 100*ITEMS$n_yes/ITEMS$n_asked
     ITEMS$pct_no <- 100*ITEMS$n_no/ITEMS$n_asked
 
-    q_root <- findRoot(odk_form)
+    q_root <- findRoot(odk_form)$name
     q_dem_groups <- demGroups(odk_form)
     ITEMS$root_item <- ITEMS$name %in% q_root
     ITEMS$adult_item <- ITEMS$name %in% q_dem_groups$adults
