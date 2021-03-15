@@ -349,7 +349,9 @@ demGroups <- function (odk_form) {
 #' @param odk_data A data frame with ODK data
 #' @param odk_form A data frame containing an ODK form.
 #' @param id_col A string with column name in odk_data with ID (default is "meta.instanceID")
-#'
+#' @param check_parents A logical (default is TRUE) to implement a more
+#' aggressive check of skip patterns (i.e., include parent's dependents).
+#' 
 #' @details
 #' List with two data frames Deaths and Items.
 #' 
@@ -367,7 +369,7 @@ demGroups <- function (odk_form) {
 #' @importFrom stringi stri_endswith_fixed
 #' @export
 #'
-itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
+itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", check_parents = TRUE) {
 
     ## set up input data
     split_names <- strsplit(names(odk_data), "\\.")
@@ -419,6 +421,11 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
 
     names(odk_data) <- tolower(death_fnames)
     odk_data$item_response_ID <- DEATHS$ID
+    ITEM_DEATH_DUMMY <- odk_data
+    ITEM_DEATH_DUMMY <- lapply(odk_data, function (x) as.character(x))
+    ITEM_DEATH_DUMMY <- as.data.frame(ITEM_DEATH_DUMMY)
+    ITEM_DEATH_DUMMY[1:nrow(odk_data), 1:ncol(odk_data)] <- FALSE
+    ITEM_DEATH_DUMMY$item_response_ID <- odk_data$item_response_ID
     for (i in 1:ncol(odk_data)) {
 
         index_form <- which(tolower(clean_form$name) == tolower(death_fnames[i]))
@@ -430,6 +437,22 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
         depends <- unlist(depends)
         index_depends <- which(clean_form$name %in% depends)
         depends_relevant <- clean_form$relevant[index_depends]
+        if (check_parents) {
+            last_relevant <- tail(depends_relevant, n = 1)
+            clean_last_relevant <- gsub("\\$\\{[^\\}]*\\}[ ]*!", "", last_relevant)
+            clean_last_relevant <- gsub("not\\(selected\\(\\$\\{[^\\}]*\\}", "", clean_last_relevant)
+            clean_last_relevant <- gsub("Id10114", "", clean_last_relevant)
+            parent_depends <- stri_match_all_regex(clean_last_relevant,
+                                                   pattern = "\\$\\{[^\\}]*\\}",
+                                                   omit_no_match=TRUE)
+            parent_depends <- unlist(parent_depends)
+            parent_depends <- gsub("\\$\\{|\\}", "", parent_depends)
+            if (length(parent_depends) > 0) {
+                index_depends <- c(index_depends,
+                                   which(clean_form$name %in% parent_depends))
+                depends_relevant <- clean_form$relevant[index_depends]
+            }
+        }
         if (all(depends_relevant == "")) {
             responses <- odk_data
         } else {
@@ -491,10 +514,15 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
                 sum(tolower(responses[, death_fnames[i]]) == "yes", na.rm = TRUE)
             ITEMS[index_form, "n_no"] <- ITEMS[index_form, "n_no"] +
                 sum(tolower(responses[, death_fnames[i]]) == "no", na.rm = TRUE)
-            tab <- table(responses[, death_fnames[i]])
+
+            missing <- responses[, death_fnames[i]] == "" | is.na(responses[, death_fnames[i]])
+            tab <- table(responses[!missing, death_fnames[i]])
             ptab <- tab/sum(tab)
             ITEMS[index_form, "var"] <- stats::var(ptab, na.rm = TRUE)
             ITEMS[index_form, "entropy"] <- -1*sum(ptab*log(ptab))
+
+            ITEM_DEATH_DUMMY[ITEM_DEATH_DUMMY$item_response_ID %in% responses$item_response_ID,
+                             i] <- TRUE
 #        }
     }
     ITEMS$"label" <- iconv(ITEMS$"label", "UTF-8", "ASCII", sub=" ")
@@ -536,6 +564,7 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID") {
    ## devtools::test_file("../tests/testthat/test-item-response.R")
     # That's all folks!
     results <- list(Deaths = DEATHS,
-                    Items = ITEMS)
+                    Items = ITEMS,
+                    DummyDF = ITEM_DEATH_DUMMY)
     return (results)
 }
