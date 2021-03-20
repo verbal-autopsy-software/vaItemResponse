@@ -12,5 +12,5 @@ This package can be installed with the `devtools` package
 
 ```
 ## install.packages("devtools")
-devtools::install_github("verbal-autopsy-software/vaItemResponse", subdir = "vaItemResponse)
+devtools::install_github("verbal-autopsy-software/vaItemResponse", subdir = "vaItemResponse")
 ```
