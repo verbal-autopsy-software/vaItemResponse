@@ -371,6 +371,9 @@ demGroups <- function (odk_form) {
 #'
 itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", check_parents = TRUE) {
 
+    ## if the column is select (or multiselect) then make lower case
+    ## does this mess up the conditioning (on dependencies) when you make it lower case? becaues
+    ## this will include numbers (by 48 > "40" gives TRUE and 48 > "60" gives FALSE)
     ## set up input data
     split_names <- strsplit(names(odk_data), "\\.")
     death_fnames <- unlist(lapply(split_names, function (x) x[length(x)]))
@@ -420,6 +423,10 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", check_pa
     ## and vice versa.
 
     names(odk_data) <- tolower(death_fnames)
+    select_names <- tolower(odk_form$name[grep('select', odk_form$type)])
+    odk_data_select_names <- names(odk_data)[names(odk_data) %in% select_names]
+    odk_data[, odk_data_select_names] <- apply(odk_data[,odk_data_select_names], 2, tolower)
+
     odk_data$item_response_ID <- DEATHS$ID
     ITEM_DEATH_DUMMY <- odk_data
     ITEM_DEATH_DUMMY <- lapply(odk_data, function (x) as.character(x))
