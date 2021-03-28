@@ -444,10 +444,14 @@ itemMissing <- function(odk_data, odk_form, id_col = "meta.instanceID", check_pa
         depends <- unlist(depends)
         index_depends <- which(clean_form$name %in% depends)
         depends_relevant <- clean_form$relevant[index_depends]
-        if (check_parents) {
+        if (check_parents & tolower(death_fnames[i]) != "id10310") {
             last_relevant <- tail(depends_relevant, n = 1)
             clean_last_relevant <- gsub("\\$\\{[^\\}]*\\}[ ]*!", "", last_relevant)
             clean_last_relevant <- gsub("not\\(selected\\(\\$\\{[^\\}]*\\}", "", clean_last_relevant)
+            # new -- this didn't make a difference
+            ## clean_last_relevant <- gsub("string-length\\(\\$\\{[^\\}]*\\}\\)[ ]*=[ ]*0", "", clean_last_relevant)
+            ## clean_last_relevant <- gsub("\\$\\{[^\\}]*\\}[ ]*=[ ]*'NaN'", "", clean_last_relevant)
+            # new
             clean_last_relevant <- gsub("Id10114", "", clean_last_relevant)
             parent_depends <- stri_match_all_regex(clean_last_relevant,
                                                    pattern = "\\$\\{[^\\}]*\\}",
